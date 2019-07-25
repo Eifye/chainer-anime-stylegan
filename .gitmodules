@@ -1,0 +1,6 @@
+[submodule "externals/chainer_stylegan"]
+	path = externals/chainer_stylegan
+	url = git@github.com:Eifye/chainer-stylegan.git
+[submodule "externals/tensorflow_stylegan"]
+	path = externals/tensorflow_stylegan
+	url = git@github.com:Eifye/stylegan.git
