@@ -61,36 +61,39 @@ def import_synthesis_network(gen_tf, gen_ch):
     gen_ch.gen.outs[7].c.W.array[:] = var_tf['G_synthesis/ToRGB_lod0/weight'].transpose((3,2,0,1))
     gen_ch.gen.outs[7].c.b.array[:] = var_tf['G_synthesis/ToRGB_lod0/bias']
 
-def import_generator(gen_tf):
-    dst = net.Generator(512)
+def import_generator(gen_tf, ch = 512):
+    dst = net.Generator(ch)
     import_mapping_network(gen_tf, dst)
     import_synthesis_network(gen_tf, dst)
     w_avg = gen_tf.vars['dlatent_avg'].eval()
     return dst, w_avg
 
-def import_discriminator(dis_tf, dis_ch):
+def import_discriminator(dis_tf, ch = 512):
+    dst = net.Discriminator(ch, True)
     var_tf = {kk:vv.eval() for kk, vv in dis_tf.vars.items()}
     
     # from rgb
     for ii in range(8):
         parent = 'FromRGB_lod{}/'.format(ii)
-        dis_ch.ins[7-ii].c.W.array[:] = var_tf[parent + 'weight'].transpose((3,2,0,1))
-        dis_ch.ins[7-ii].c.b.array[:] = var_tf[parent + 'bias']
+        dst.ins[7-ii].c.W.array[:] = var_tf[parent + 'weight'].transpose((3,2,0,1))
+        dst.ins[7-ii].c.b.array[:] = var_tf[parent + 'bias']
         
     # last dense layer
-    dis_ch.blocks[0].c0.c.W.array[:] = var_tf['4x4/Conv/weight'].transpose((3,2,0,1))
-    dis_ch.blocks[0].c0.c.b.array[:] = var_tf['4x4/Conv/bias']
-    dis_ch.blocks[0].l1.c.W.array[:] = var_tf['4x4/Dense0/weight'].T
-    dis_ch.blocks[0].l1.c.b.array[:] = var_tf['4x4/Dense0/bias']
-    dis_ch.blocks[0].l2.c.W.array[:] = var_tf['4x4/Dense1/weight'].T
-    dis_ch.blocks[0].l2.c.b.array[:] = var_tf['4x4/Dense1/bias']
+    dst.blocks[0].c0.c.W.array[:] = var_tf['4x4/Conv/weight'].transpose((3,2,0,1))
+    dst.blocks[0].c0.c.b.array[:] = var_tf['4x4/Conv/bias']
+    dst.blocks[0].l1.c.W.array[:] = var_tf['4x4/Dense0/weight'].T
+    dst.blocks[0].l1.c.b.array[:] = var_tf['4x4/Dense0/bias']
+    dst.blocks[0].l2.c.W.array[:] = var_tf['4x4/Dense1/weight'].T
+    dst.blocks[0].l2.c.b.array[:] = var_tf['4x4/Dense1/bias']
     
     # intermediate layer
     for ii in range(1, 8):
         res = 4*(2**(ii))
         parent = '{}x{}/'.format(res, res)
-        dis_ch.blocks[ii].c0.c.W.array[:] = var_tf[parent + 'Conv0/weight'].transpose((3,2,0,1))
-        dis_ch.blocks[ii].c0.c.b.array[:] = var_tf[parent + 'Conv0/bias']
-        dis_ch.blocks[ii].c1.c.W.array[:] = var_tf[parent + 'Conv1_down/weight'].transpose((3,2,0,1))
-        dis_ch.blocks[ii].c1.c.b.array[:] = var_tf[parent + 'Conv1_down/bias']
+        dst.blocks[ii].c0.c.W.array[:] = var_tf[parent + 'Conv0/weight'].transpose((3,2,0,1))
+        dst.blocks[ii].c0.c.b.array[:] = var_tf[parent + 'Conv0/bias']
+        dst.blocks[ii].c1.c.W.array[:] = var_tf[parent + 'Conv1_down/weight'].transpose((3,2,0,1))
+        dst.blocks[ii].c1.c.b.array[:] = var_tf[parent + 'Conv1_down/bias']
+
+    return dst
         

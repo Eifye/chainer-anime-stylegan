@@ -1,8 +1,8 @@
 /python_venv/
 *.pyc
 __pycache__/
-/data/
 /log/
 /results/
 /.vscode/
 *.ipynb
+/data
